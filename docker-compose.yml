@@ -1,0 +1,12 @@
+version: '2'
+services:
+  state-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    restart: always
+    volumes:
+      - ./:/go/src/github.com/emmac1016/state-api
+    ports:
+      - "8080:8080"
