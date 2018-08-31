@@ -50,7 +50,7 @@ func main() {
 			}
 		}
 
-		connInfo := internal.DBConnectionInfo{
+		connInfo := internal.ConnectionInfo{
 			Host:     c.String("host"),
 			Database: c.String("db"),
 			Username: c.String("user"),

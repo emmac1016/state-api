@@ -4,22 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/emmac1016/state-api/internal/repositories"
 	"github.com/julienschmidt/httprouter"
-	"gopkg.in/mgo.v2/bson"
 )
-
-// State defines the mongo document structure
-type State struct {
-	ID       bson.ObjectId `bson:"_id,omitempty" json:"_id"`
-	Name     string        `bson:"name" json:"state"`
-	Location GeoJSON       `bson:"location" json:"border"`
-}
-
-//GeoJSON holds the longitude & latitude data to query from
-type GeoJSON struct {
-	Type        string      `bson:"type" json:"type"`
-	Coordinates [][]float32 `bson:"coordinates" json:"coordinates"`
-}
 
 func GetState(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	if err := r.ParseForm(); err != nil {
@@ -32,4 +19,6 @@ func GetState(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	latitude := r.FormValue("latitude")
 
 	fmt.Fprintf(w, "Longitude: %s, Latitude: %s\n", longitude, latitude)
+
+	state, err := repositories.FindStateByCoordinates(longitude, latitude)
 }

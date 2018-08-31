@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/emmac1016/state-api/handlers"
+	"github.com/emmac1016/state-api/internal/repositories"
 )
 
 // JSONData is used to extract data from states.json file
@@ -82,7 +82,7 @@ func getStatesFromFile(fileName string) ([]interface{}, error) {
 	}
 	defer file.Close()
 
-	var state handlers.State
+	var state repositories.State
 	data := &JSONData{}
 
 	scanner := bufio.NewScanner(file)
@@ -108,10 +108,10 @@ func getStatesFromFile(fileName string) ([]interface{}, error) {
 	return states, nil
 }
 
-func newState(data *JSONData) handlers.State {
-	return handlers.State{
+func newState(data *JSONData) repositories.State {
+	return repositories.State{
 		Name: data.Name,
-		Location: handlers.GeoJSON{
+		Location: repositories.GeoJSON{
 			Type:        "Polygon",
 			Coordinates: data.Border,
 		},
