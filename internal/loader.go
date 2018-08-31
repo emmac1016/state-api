@@ -6,8 +6,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-
-	"github.com/emmac1016/state-api/internal/repositories"
 )
 
 // JSONData is used to extract data from states.json file
@@ -34,6 +32,14 @@ func (fl *FixtureLoader) LoadData() error {
 		log.Print("Cannot load state fixtures: ", err)
 		return err
 	}
+
+	// log.Print("Enforcing geospatial index on states collection")
+	// err = fl.DB.SetGeoSpatialIndex("states")
+	// if err != nil {
+	// 	log.Print("Failure to set geo spatial index: ", err)
+	// 	return err
+	// }
+
 	return nil
 }
 
@@ -82,7 +88,7 @@ func getStatesFromFile(fileName string) ([]interface{}, error) {
 	}
 	defer file.Close()
 
-	var state repositories.State
+	var state State
 	data := &JSONData{}
 
 	scanner := bufio.NewScanner(file)
@@ -108,10 +114,10 @@ func getStatesFromFile(fileName string) ([]interface{}, error) {
 	return states, nil
 }
 
-func newState(data *JSONData) repositories.State {
-	return repositories.State{
+func newState(data *JSONData) State {
+	return State{
 		Name: data.Name,
-		Location: repositories.GeoJSON{
+		Location: GeoJSON{
 			Type:        "Polygon",
 			Coordinates: data.Border,
 		},

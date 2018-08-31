@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"gopkg.in/mgo.v2"
 )
@@ -15,10 +16,23 @@ type ConnectionInfo struct {
 	Database string
 }
 
-// NewConnection connects and returns session
+// NewConnection connects and returns session given connection info
 func NewConnection(ci *ConnectionInfo) (*mgo.Session, error) {
+	if ci == nil {
+		ci = getDefaultConnection()
+	}
+
 	conn := ci.createConnectionString()
 	return connect(conn)
+}
+
+func getDefaultConnection() *ConnectionInfo {
+	return &ConnectionInfo{
+		Host:     os.Getenv("MONGO_HOST"),
+		Database: os.Getenv("MONGO_DB"),
+		Username: os.Getenv("MONGO_USER"),
+		Password: os.Getenv("MONGO_PW"),
+	}
 }
 
 func connect(conn string) (*mgo.Session, error) {
