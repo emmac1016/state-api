@@ -1,20 +1,10 @@
 include .env
 export
-# PROJECTNAME=$(shell basename "$(PWD)")
-
-# GOCMD = go
-# GOBUILD = $(GOCMD) build
-# GOTEST = $(GOCMD) test
-# PKG = $(shell go list ./...)
-# PORT ?= 8080
-# ENTRYPOINT=./
-# BINARY_NAME=$(PROJECTNAME)
-DB_CONTAINER=mongo
 
 dev: 
 	@make db_build
-	@make db_add_auth
-	#@make serve
+	@make load_fixtures
+	@make serve
 
 ## serve: Start in development mode. Auto-starts on code changes
 serve:

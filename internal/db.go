@@ -36,7 +36,6 @@ func NewDB(connInfo *DBConnectionInfo) (*DB, error) {
 	}, nil
 }
 
-// ConnectDB creates a mongodb session
 func connect(conn string) (*mgo.Session, error) {
 	session, err := mgo.Dial(conn)
 	if err != nil {
@@ -54,8 +53,6 @@ func createConnectionString(connInfo *DBConnectionInfo) string {
 		connInfo.Host,
 		connInfo.Database,
 	)
-
-	log.Print(connString)
 
 	return connString
 }

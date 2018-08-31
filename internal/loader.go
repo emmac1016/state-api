@@ -16,10 +16,12 @@ type JSONData struct {
 	Border [][]float32 `json:"border"`
 }
 
+// FixtureLoader is a wrapper around DB struct to expand functionality
 type FixtureLoader struct {
 	DB *DB
 }
 
+// LoadData drops and loads fixture data
 func (fl *FixtureLoader) LoadData() error {
 	err := fl.dropData()
 	if err != nil {
