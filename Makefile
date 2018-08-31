@@ -21,7 +21,7 @@ serve:
 
 db_build:
 	@echo "Setting up Dev DB"
-	@docker-compose up --build -d mongo
+	@docker-compose up --build mongo
 
 db_add_auth:
 	@echo "Adding users to Dev DB"

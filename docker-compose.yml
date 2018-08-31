@@ -16,17 +16,17 @@ services:
 
   mongo:
     container_name: mongo
-    image: 'bitnami/mongodb:latest'
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile.mongo
+    image: mongo:latest
     ports:
       - "27017:27017"
-    #command: mongo --host mongo --eval "load(\"/mongo.js\")"
     volumes:
       - ./docker/data:/data
-      - ./build/mongo.js:/mongo.js
+      - "./build/docker/scripts/:/docker-entrypoint-initdb.d/"
     environment:
-      - ALLOW_EMPTY_PASSWORD=yes
-      - MONGODB_EXTRA_FLAGS=--smallfiles
-    #command: mongo --host mongo --eval "load(\"/mongo.js\")"
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PW}
+      - MONGO_ROOT_USER=${MONGO_ROOT_USER}
+      - MONGO_ROOT_PW=${MONGO_ROOT_PW}
+      - MONGO_DB=${MONGO_DB}
+      - MONGO_USER=${MONGO_USER}
+      - MONGO_PW=${MONGO_PW}
