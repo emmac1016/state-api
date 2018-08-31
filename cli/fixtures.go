@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/emmac1016/state-api/handlers"
 	"github.com/emmac1016/state-api/internal"
 	"github.com/urfave/cli"
-	mgo "gopkg.in/mgo.v2"
 )
 
 // JSONData is used to extract data from state.json file
@@ -19,7 +19,9 @@ type JSONData struct {
 	Border [][]float32 `json:"border"`
 }
 
-var conn mgo.Session
+type FixtureLoader struct {
+	DB *internal.DB
+}
 
 func main() {
 	app := cli.NewApp()
@@ -62,16 +64,23 @@ func main() {
 			}
 		}
 
-		connInfo := &internal.DBConnectionInfo{
+		connInfo := internal.DBConnectionInfo{
 			Host:     c.String("host"),
 			Database: c.String("db"),
 			Username: c.String("user"),
 			Password: c.String("pass"),
 		}
-		_, err := internal.ConnectDB(connInfo)
-
+		db, err := internal.NewDB(&connInfo)
 		if err != nil {
 			fmt.Println("Error getting db connection: ", err)
+			return nil
+		}
+
+		fl := &FixtureLoader{DB: db}
+		err = fl.loadData()
+
+		if err != nil {
+			fmt.Println("Loading fixtures failed: ", err)
 			return nil
 		}
 
@@ -82,88 +91,61 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// err := cli.NewApp().Run(os.Args)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// host := flag.String("host", "localhost", "mongo host(s) to connect to")
-	// db := flag.String("db", "test", "database to connect to")
-	// user := flag.String("user", "admin", "mongo username to connect with")
-	// pw := flag.String("pw", "pass", "password for given mongo username")
-	// flag.Parse()
-
-	// if *host == "" || *db == "" || *user == "" || *pw == "" {
-	// 	flag.PrintDefaults()
-	// 	os.Exit(1)
-	// }
-
-	//TODO: add flag to pass in this data
-
-	// err := loadFixtureData()
-	// if err != nil {
-	// 	log.Fatal("Could not load fixture data: ", err)
-	// }
 }
 
-func LoadFixtureData() error {
-	// err := dropFixtures()
-	// if err != nil {
-	// 	log.Print("Cannot drop fixtures: ", err)
-	// 	return err
-	// }
+func (fl *FixtureLoader) loadData() error {
+	err := fl.dropData()
+	if err != nil {
+		log.Print("Cannot drop fixtures: ", err)
+		return err
+	}
 
-	// err = loadStateFixtures()
-	// if err != nil {
-	// 	log.Print("Cannot load state fixtures: ", err)
-	// 	return err
-	// }
-
-	log.Print("LoadFixtureData")
+	err = fl.loadStateData()
+	if err != nil {
+		log.Print("Cannot load state fixtures: ", err)
+		return err
+	}
 	return nil
 }
 
-// func dropFixtures() error {
-// 	log.Print("first dropping fixtures")
-// 	conn, err := internal.ConnectDB()
-// 	if err != nil {
-// 		log.Print("Error getting db connection: ", err)
-// 		return err
-// 	}
+func (fl *FixtureLoader) dropData() error {
+	log.Print("Dropping ", fl.DB.Name)
 
-// 	log.Print("connected to DB")
-// 	session := conn.Copy()
-// 	defer session.Close()
+	session := fl.DB.Connection.Copy()
+	defer session.Close()
 
-// 	db := session.DB(os.Getenv("MONGO_DB"))
-// 	err = db.DropDatabase()
-// 	if err != nil {
-// 		log.Print("Error droping database: ", err)
-// 		return err
-// 	}
+	db := session.DB(fl.DB.Name)
+	err := db.DropDatabase()
+	if err != nil {
+		log.Print("Error droping database: ", err)
+		return err
+	}
 
-// 	return nil
-// }
+	return nil
+}
 
-// func loadStateFixtures() error {
-// 	log.Print("loading state fixtures")
-// 	states, err := getStatesFromFile("../build/states.json")
-// 	if err != nil {
-// 		log.Print("Error in parsing file: ", err)
-// 		return err
-// 	}
+func (fl *FixtureLoader) loadStateData() error {
+	log.Print("Loading state fixtures")
 
-// 	err = loadStates(states)
-// 	if err != nil {
-// 		log.Print("Error in inserting into db: ", err)
-// 		return err
-// 	}
+	absPath, _ := filepath.Abs("../state-api/build/states.json")
+	states, err := getStatesFromFile(absPath)
+	if err != nil {
+		log.Print("Error in parsing file: ", err)
+		return err
+	}
 
-// 	return nil
-// }
+	err = fl.loadStates(states)
+	if err != nil {
+		log.Print("Error in inserting into db: ", err)
+		return err
+	}
+
+	return nil
+}
 
 func getStatesFromFile(fileName string) ([]interface{}, error) {
-	// Open file for reading
+	log.Print("Parsing file: ", fileName)
+
 	file, err := os.Open(fileName)
 	if err != nil {
 		log.Print("Could not open file: ", err)
@@ -174,14 +156,13 @@ func getStatesFromFile(fileName string) ([]interface{}, error) {
 	var state handlers.State
 	data := &JSONData{}
 
-	// Reading line by line
 	scanner := bufio.NewScanner(file)
 	states := make([]interface{}, 50)
 	index := 0
 	for scanner.Scan() {
 		err := json.Unmarshal([]byte(scanner.Text()), data)
 		if err != nil {
-			log.Fatal("Could not unmarshal JSON: ", err)
+			log.Print("Could not unmarshal JSON: ", err)
 			return nil, err
 		}
 
@@ -191,7 +172,7 @@ func getStatesFromFile(fileName string) ([]interface{}, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Print(err)
+		log.Print("Scanner error: ", err)
 		return nil, err
 	}
 
@@ -208,33 +189,17 @@ func newState(data *JSONData) handlers.State {
 	}
 }
 
-// func loadStates(states []interface{}) error {
+func (fl *FixtureLoader) loadStates(states []interface{}) error {
+	log.Print("Loading state data into db")
 
-// 	// TODO: add flag to pass in this data
-// 	connInfo := &mgo.DialInfo{
-// 		Addrs:    []string{os.Getenv("MONGO_HOST")},
-// 		Timeout:  10 * time.Second,
-// 		Database: os.Getenv("MONGO_DB"),
-// 		Username: os.Getenv("MONGO_USER"),
-// 		Password: os.Getenv("MONGO_PW"),
-// 	}
-// 	conn, err := internal.ConnectDB()
-// 	if err != nil {
-// 		log.Print("Error getting db connection: ", err)
-// 		return err
-// 	}
+	session := fl.DB.Connection.Copy()
+	defer session.Close()
 
-// 	session := conn.Copy()
-// 	defer session.Close()
+	collection := session.DB(fl.DB.Name).C("states")
+	bulkInsert := collection.Bulk()
+	bulkInsert.Insert(states...)
+	bulkInsert.Unordered()
+	_, err := bulkInsert.Run()
 
-// 	log.Print(os.Getenv("MONGO_DB"))
-// 	collection := session.DB(os.Getenv("MONGO_DB")).C("states")
-// 	//err = collection.Insert(states...)
-// 	bulkInsert := collection.Bulk()
-// 	bulkInsert.Insert(states...)
-// 	bulkInsert.Unordered()
-// 	result, err := bulkInsert.Run()
-// 	log.Print("result of bulk insert:")
-// 	log.Print(result)
-// 	return err
-// }
+	return err
+}
