@@ -1,3 +1,5 @@
+include .env
+export
 # PROJECTNAME=$(shell basename "$(PWD)")
 
 # GOCMD = go
@@ -21,9 +23,7 @@ serve:
 
 db_build:
 	@echo "Setting up Dev DB"
-	@docker-compose up --build mongo
+	@docker-compose up --build -d mongo
 
-db_add_auth:
-	@echo "Adding users to Dev DB"
-	@sleep 3
-	@docker exec -it mongo mongo < build/mongo.js
+load_fixtures:
+	./fixtures --host ${MONGO_HOST} --db ${MONGO_DB} --user ${MONGO_USER} --pass ${MONGO_PW}

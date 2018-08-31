@@ -1,4 +1,4 @@
-version: '2'
+version: "3"
 services:
   state-api:
     container_name: state-api
@@ -20,8 +20,8 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - ./docker/data:/data
-      - "./build/docker/scripts/:/docker-entrypoint-initdb.d/"
+      - data-volume:/data
+      - ./build/docker/scripts/:/docker-entrypoint-initdb.d/
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PW}
@@ -30,3 +30,6 @@ services:
       - MONGO_DB=${MONGO_DB}
       - MONGO_USER=${MONGO_USER}
       - MONGO_PW=${MONGO_PW}
+
+volumes:
+  data-volume:

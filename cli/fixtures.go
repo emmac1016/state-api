@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/emmac1016/state-api/handlers"
 	"github.com/emmac1016/state-api/internal"
@@ -30,7 +29,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:   "host",
-			Value:  "localhost",
+			Value:  "localhost:27017",
 			Usage:  "mongo host(s) to connect to",
 			EnvVar: "MONGO_HOST",
 		},
@@ -47,7 +46,7 @@ func main() {
 			EnvVar: "MONGO_USER",
 		},
 		cli.StringFlag{
-			Name:   "pw",
+			Name:   "pass",
 			Value:  "",
 			Usage:  "password for given mongo username",
 			EnvVar: "MONGO_PW",
@@ -55,17 +54,19 @@ func main() {
 	}
 
 	app.Action = func(c *cli.Context) error {
-		if c.NumFlags() != 4 {
-			fmt.Println("Not enough arguments supplied")
-			return nil
+		// All arguments are required
+		for _, flagName := range c.FlagNames() {
+			if !c.IsSet(flagName) {
+				fmt.Printf("%s was not given", flagName)
+				return nil
+			}
 		}
 
-		connInfo := &mgo.DialInfo{
-			Addrs:    []string{c.String("host")},
-			Timeout:  10 * time.Second,
+		connInfo := &internal.DBConnectionInfo{
+			Host:     c.String("host"),
 			Database: c.String("db"),
 			Username: c.String("user"),
-			Password: c.String("pw"),
+			Password: c.String("pass"),
 		}
 		_, err := internal.ConnectDB(connInfo)
 
