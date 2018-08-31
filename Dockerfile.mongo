@@ -1,0 +1,6 @@
+FROM bitnami/mongodb:latest
+LABEL author="Emma Chirapongse <emmac1016@gmail.com>"
+
+ADD ./build/mongo.js /mongo.js
+
+EXPOSE 27017

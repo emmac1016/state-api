@@ -1,6 +1,7 @@
 version: '2'
 services:
   state-api:
+    container_name: state-api
     build:
       context: .
       dockerfile: Dockerfile
@@ -14,5 +15,18 @@ services:
       - "8080:8080"
 
   mongo:
-    image: mongo
-    command: --smallfiles
+    container_name: mongo
+    image: 'bitnami/mongodb:latest'
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.mongo
+    ports:
+      - "27017:27017"
+    #command: mongo --host mongo --eval "load(\"/mongo.js\")"
+    volumes:
+      - ./docker/data:/data
+      - ./build/mongo.js:/mongo.js
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - MONGODB_EXTRA_FLAGS=--smallfiles
+    #command: mongo --host mongo --eval "load(\"/mongo.js\")"

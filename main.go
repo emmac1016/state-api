@@ -9,6 +9,14 @@ import (
 )
 
 func main() {
+	// if os.Getenv("ENV") == "DEV" {
+	// 	log.Print("Loading fixture data")
+	// 	err := internal.LoadFixtureData()
+	// 	if err != nil {
+	// 		log.Fatal("Failure to supply data")
+	// 	}
+	// }
+
 	router := httprouter.New()
 	router.POST("/", handlers.GetState)
 
