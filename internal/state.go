@@ -42,21 +42,21 @@ func NewStateRepo() (*StateRepo, error) {
 
 // FindStateByCoordinates finds what state the given coordinates are in
 func (sr *StateRepo) FindStateByCoordinates(longitude float64, latitude float64) ([]State, error) {
-	//var results []State
+	var results []State
 	session := sr.db.Connection.Copy()
 	defer session.Close()
 
-	// collection := session.DB(sr.db.Name).C("states")
-	// err := collection.Find(bson.M{
-	// 	"location": bson.M{
-	// 		"$nearSphere": bson.M{
-	// 			"$geometry": bson.M{
-	// 				"type": "Point",
-	// 				"coordinates": []float64{longitude, latitude},
-	// 			},
+	collection := session.DB(sr.db.Name).C("states")
+	err := collection.Find(bson.M{
+		"location": bson.M{
+			"$geoIntersects": bson.M{
+				"$geometry": bson.M{
+					"type":        "Point",
+					"coordinates": []float64{longitude, latitude},
+				},
+			},
+		},
+	}).All(&results)
 
-	// 		}
-	// 	}
-	// }).All(&results)
-	return nil, nil
+	return results, err
 }
