@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/jinzhu/copier"
 )
 
 // JSONData is used to extract data from states.json file
@@ -33,12 +35,12 @@ func (fl *FixtureLoader) LoadData() error {
 		return err
 	}
 
-	// log.Print("Enforcing geospatial index on states collection")
-	// err = fl.DB.SetGeoSpatialIndex("states")
-	// if err != nil {
-	// 	log.Print("Failure to set geo spatial index: ", err)
-	// 	return err
-	// }
+	log.Print("Enforcing geospatial index on states collection")
+	err = fl.DB.SetGeoSpatialIndex("states")
+	if err != nil {
+		log.Print("Failure to set geo spatial index: ", err)
+		return err
+	}
 
 	return nil
 }
@@ -68,7 +70,8 @@ func (fl *FixtureLoader) loadStateData() error {
 		log.Print("Error in parsing file: ", err)
 		return err
 	}
-
+	log.Print("-------------------------------------------------")
+	log.Print(states)
 	err = fl.loadStates(states)
 	if err != nil {
 		log.Print("Error in inserting into db: ", err)
@@ -76,56 +79,6 @@ func (fl *FixtureLoader) loadStateData() error {
 	}
 
 	return nil
-}
-
-func getStatesFromFile(fileName string) ([]interface{}, error) {
-	log.Print("Parsing file: ", fileName)
-
-	file, err := os.Open(fileName)
-	if err != nil {
-		log.Print("Could not open file: ", err)
-		return nil, err
-	}
-	defer file.Close()
-
-	var state State
-	data := &JSONData{}
-
-	scanner := bufio.NewScanner(file)
-	states := make([]interface{}, 50)
-	index := 0
-	for scanner.Scan() {
-		err := json.Unmarshal([]byte(scanner.Text()), data)
-		if err != nil {
-			log.Print("Could not unmarshal JSON: ", err)
-			return nil, err
-		}
-
-		state = newState(data)
-		states[index] = state
-		index++
-	}
-
-	if err := scanner.Err(); err != nil {
-		log.Print("Scanner error: ", err)
-		return nil, err
-	}
-
-	return states, nil
-}
-
-func newState(data *JSONData) State {
-	// GeoJSON standard format for Polygon coordinates
-	coordinates := make([][][]float64, 1)
-	coordinates[0] = data.Border
-
-	return State{
-		Name: data.Name,
-		Location: GeoJSON{
-			Type:        "Polygon",
-			Coordinates: coordinates,
-		},
-	}
 }
 
 func (fl *FixtureLoader) loadStates(states []interface{}) error {
@@ -141,4 +94,49 @@ func (fl *FixtureLoader) loadStates(states []interface{}) error {
 	_, err := bulkInsert.Run()
 
 	return err
+}
+
+func getStatesFromFile(fileName string) ([]interface{}, error) {
+	log.Print("Parsing file: ", fileName)
+
+	file, err := os.Open(fileName)
+	if err != nil {
+		log.Print("Could not open file: ", err)
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	var states []interface{}
+
+	for scanner.Scan() {
+		data := JSONData{}
+		err := json.Unmarshal([]byte(scanner.Text()), &data)
+		if err != nil {
+			log.Print("Could not unmarshal JSON: ", err)
+			return nil, err
+		}
+
+		coordinates := make([][][]float64, 1)
+		coordinates[0] = data.Border
+
+		state := State{
+			Name: data.Name,
+			Location: GeoJSON{
+				Type:        "Polygon",
+				Coordinates: coordinates,
+			},
+		}
+
+		newState := State{}
+		copier.Copy(&newState, &state)
+		states = append(states, newState)
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Print("Scanner error: ", err)
+		return nil, err
+	}
+
+	return states, nil
 }
