@@ -8,7 +8,7 @@ import (
 
 // AbstractStateRepo defines the methods that StateRepo implements
 type AbstractStateRepo interface {
-	FindStateByCoordinates(float32, float32)
+	FindStateByCoordinates(float64, float64)
 }
 
 // StateRepo is a wrapper around DB struct to expand functionality
@@ -25,8 +25,8 @@ type State struct {
 
 //GeoJSON holds the longitude & latitude data to query from
 type GeoJSON struct {
-	Type        string      `bson:"type" json:"type"`
-	Coordinates [][]float32 `bson:"coordinates" json:"coordinates"`
+	Type        string        `bson:"type" json:"type"`
+	Coordinates [][][]float64 `bson:"coordinates" json:"coordinates"`
 }
 
 // NewStateRepo returns an instance of StateRepo that will be used to execute queries

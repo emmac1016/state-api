@@ -11,7 +11,7 @@ import (
 // JSONData is used to extract data from states.json file
 type JSONData struct {
 	Name   string      `json:"state"`
-	Border [][]float32 `json:"border"`
+	Border [][]float64 `json:"border"`
 }
 
 // FixtureLoader is a wrapper around DB struct to expand functionality
@@ -115,11 +115,15 @@ func getStatesFromFile(fileName string) ([]interface{}, error) {
 }
 
 func newState(data *JSONData) State {
+	// GeoJSON standard format for Polygon coordinates
+	coordinates := make([][][]float64, 1)
+	coordinates[0] = data.Border
+
 	return State{
 		Name: data.Name,
 		Location: GeoJSON{
 			Type:        "Polygon",
-			Coordinates: data.Border,
+			Coordinates: coordinates,
 		},
 	}
 }
