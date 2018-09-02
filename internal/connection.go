@@ -17,18 +17,32 @@ type ConnectionInfo struct {
 }
 
 type Connection interface {
-	Dial(string) *Session
+	Dial() error
 }
 
-func (ci *ConnectionInfo) Dial() (Session, error) {
+type ConnectionHandler struct {
+	conn string
+	s    Session
+}
+
+func NewConnectionHandler(ci *ConnectionInfo) *ConnectionHandler {
 	conn := ci.createConnectionString()
-	session, err := mgo.Dial(conn)
+	return &ConnectionHandler{
+		conn: conn,
+	}
+}
+
+func (ch *ConnectionHandler) Dial() error {
+	log.Print("calling dial here")
+	session, err := mgo.Dial(ch.conn)
 	if err != nil {
 		log.Print("Error in creating db session: ", err)
-		return nil, err
+		return err
 	}
 
-	return session, nil
+	ch.s = session
+
+	return nil
 }
 
 // GetDefaultConnection returns connection info for the App based on environment

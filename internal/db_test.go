@@ -2,40 +2,51 @@ package internal
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/emmac1016/state-api/mocks"
 )
 
-func TestNewDB(t *testing.T) {
+func TestNewDBHandler(t *testing.T) {
 	tests := []struct {
-		name      string
-		want      string
-		expectErr bool
+		name         string
+		conn         ConnectionInfo
+		want         string
+		expectedConn string
+		expectedDB   string
+		err          error
 	}{
 		{
-			name:      "NewDB returns valid StateRepo struct",
-			expectErr: false,
+			name: "NewDBHandler returns valid DBHandler struct",
+			conn: ConnectionInfo{
+				Username: "dbuser",
+				Password: "dbpass",
+				Host:     "localhost:27017",
+				Database: "mydb",
+			},
+			expectedConn: "mongodb://dbuser:dbpass@localhost:27017/mydb",
+			expectedDB:   "mydb",
+			err:          nil,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create a mock *mgo.Session, *mgo.Database, *mgo.Collection, and
-			// *mgo.Query
-			// session := &mgo.Session{}
-			// database := &mgo.Database{}
-			// collection := &mgo.Collection{}
-			// query := &mgo.Query{}
+			sess := &mocks.Session{}
+			conn := &mocks.Connection{}
+			conn.On("Dial", tt.expectedConn).Return(sess, tt.err).Once()
+			conn.On("createConnectionString").Return(expectedConn)
 
-			// We expect Dial against localhost
-			// mgo.EXPECT().Dial("localhost").Return(session, nil)
+			dbh, err := NewDBHandler(conn)
 
-			// // We expect the named database to be opened
-			// session.EXPECT().DB("test").Return(database)
-
-			// // We also expect the named collection to be opened
-			// database.EXPECT().C("items").Return(collection)
-
-			// // We then expect a query to be created against the collection
-			// collection.EXPECT().Find(bson.M{"_id": bson.ObjectIdHex("52f6aef226f149b7048b4567")}).Return(query)
+			if tt.err != nil {
+				assert.NotNil(t, err)
+			} else {
+				assert.Equal(t, dbh.DB, tt.expected)
+				assert.Nil(t, err)
+				conn.AssertExpectations(t)
+			}
 		})
 	}
 }

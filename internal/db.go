@@ -41,26 +41,30 @@ type Database interface {
 
 type DBHandler struct {
 	DB      string
+	Conn    string
 	Session Session
 }
 
 type DBH interface {
+	BulkInsert(string, ...interface{}) (*mgo.BulkResult, error)
 	Collection(string) Collection
 	Find(collection string, query interface{}) Query
 	SetGeoSpatialIndex(string) error
 }
 
-func NewDBHandler(ci *ConnectionInfo) (*DBHandler, error) {
-	session, err := ci.Dial()
+func NewDBHandler() *DBHandler {
+	return &DBHandler{}
+}
+
+func (dbh *DBHandler) Connect(ch *ConnectionHandler) error {
+	err := ch.Dial()
 	if err != nil {
 		log.Print("Error in creating DBHandler: ", err)
-		return nil, err
+		return err
 	}
 
-	return &DBHandler{
-		DB:      ci.Database,
-		Session: session,
-	}, nil
+	dbh.Session = ch.s
+	return nil
 }
 
 func (dbh *DBHandler) Collection(name string) Collection {
