@@ -56,13 +56,13 @@ func main() {
 			Username: c.String("user"),
 			Password: c.String("pass"),
 		}
-		db, err := internal.NewDB(&connInfo)
+		dbh, err := internal.NewDBHandler(&connInfo)
 		if err != nil {
 			fmt.Println("Error getting db connection: ", err)
 			return nil
 		}
 
-		fl := &internal.FixtureLoader{DB: db}
+		fl := internal.NewFixtureLoader(dbh)
 		err = fl.LoadData()
 
 		if err != nil {

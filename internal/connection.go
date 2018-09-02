@@ -16,10 +16,19 @@ type ConnectionInfo struct {
 	Database string
 }
 
-// NewConnection connects and returns session given connection info
-func NewConnection(ci *ConnectionInfo) (*mgo.Session, error) {
+type Connection interface {
+	Dial(string) *Session
+}
+
+func (ci *ConnectionInfo) Dial() (Session, error) {
 	conn := ci.createConnectionString()
-	return connect(conn)
+	session, err := mgo.Dial(conn)
+	if err != nil {
+		log.Print("Error in creating db session: ", err)
+		return nil, err
+	}
+
+	return session, nil
 }
 
 // GetDefaultConnection returns connection info for the App based on environment
@@ -30,16 +39,6 @@ func GetDefaultConnection() *ConnectionInfo {
 		Username: os.Getenv("MONGO_USER"),
 		Password: os.Getenv("MONGO_PW"),
 	}
-}
-
-func connect(conn string) (*mgo.Session, error) {
-	session, err := mgo.Dial(conn)
-	if err != nil {
-		log.Print("Error in creating db session: ", err)
-		return nil, err
-	}
-
-	return session, nil
 }
 
 func (ci *ConnectionInfo) createConnectionString() string {

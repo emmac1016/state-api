@@ -14,41 +14,41 @@ type AbstractStateRepo interface {
 
 // StateRepo is a wrapper around DB struct to expand functionality
 type StateRepo struct {
-	db *DB
+	dbh *DBHandler
 }
 
 // State defines the mongo document structure
 type State struct {
-	ID       bson.ObjectId `bson:"_id,omitempty" json:"omitempty"`
+	ID       bson.ObjectId `bson:"_id,omitempty"`
 	Name     string        `bson:"name" json:"state"`
 	Location GeoJSON       `bson:"location" json:"omitempty"`
 }
 
 //GeoJSON holds the longitude & latitude data to query from
 type GeoJSON struct {
-	Type        string        `bson:"type" json:"omitempty"`
-	Coordinates [][][]float64 `bson:"coordinates" json:"omitempty"`
+	Type        string        `bson:"type"`
+	Coordinates [][][]float64 `bson:"coordinates"`
 }
 
 // NewStateRepo returns an instance of StateRepo that will be used to execute queries
 func NewStateRepo() (*StateRepo, error) {
 	connInfo := GetDefaultConnection()
-	db, err := NewDB(connInfo)
+	dbh, err := NewDBHandler(connInfo)
 	if err != nil {
 		log.Print("Failure to get StateRepo instance: ", err)
 		return nil, err
 	}
 
-	return &StateRepo{db: db}, nil
+	return &StateRepo{dbh: dbh}, nil
 }
 
 // FindStateByCoordinates finds what state the given coordinates are in
 func (sr *StateRepo) FindStateByCoordinates(longitude float64, latitude float64) ([]State, error) {
 	var results []State
-	session := sr.db.Connection.Copy()
+	session := sr.dbh.Session.Copy()
 	defer session.Close()
 
-	collection := session.DB(sr.db.Name).C("states")
+	collection := sr.dbh.Collection("states")
 	err := collection.Find(bson.M{
 		"location": bson.M{
 			"$geoIntersects": bson.M{

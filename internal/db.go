@@ -12,28 +12,55 @@ type DB struct {
 	Connection *mgo.Session
 }
 
-// NewDB returns DB struct with connection and database name
-func NewDB(ci *ConnectionInfo) (*DB, error) {
-	conn, err := NewConnection(ci)
+type Query interface {
+	All(interface{}) error
+	Select(interface{}) Query
+}
 
+type Collection interface {
+	EnsureIndex(mgo.Index) error
+	Find(interface{}) *mgo.Query
+}
+
+type Session interface {
+	Close()
+	Copy() *mgo.Session
+	DB(name string) *mgo.Database
+}
+
+type Database interface {
+	C(name string) *Collection
+}
+
+type DBHandler struct {
+	DB      string
+	Session Session
+}
+
+func NewDBHandler(ci *ConnectionInfo) (*DBHandler, error) {
+	session, err := ci.Dial()
 	if err != nil {
-		log.Print("Error in creating DB instance: ", err)
+		log.Print("Error in creating DBHandler: ", err)
 		return nil, err
 	}
 
-	return &DB{
-		Name:       ci.Database,
-		Connection: conn,
+	return &DBHandler{
+		DB:      ci.Database,
+		Session: session,
 	}, nil
+}
+
+func (dbh *DBHandler) Collection(name string) Collection {
+	return dbh.Session.DB(dbh.DB).C(name)
 }
 
 // SetGeoSpatialIndex sets 2d geospatial index for a given collection,
 // assumes GeoJSON format with location as the key
-func (db *DB) SetGeoSpatialIndex(collectionName string) error {
-	session := db.Connection.Copy()
+func (dbh *DBHandler) SetGeoSpatialIndex(collectionName string) error {
+	session := dbh.Session.Copy()
 	defer session.Close()
 
-	collection := session.DB(db.Name).C(collectionName)
+	collection := dbh.Collection(collectionName)
 	index := mgo.Index{
 		Key: []string{"$2dsphere:location"},
 	}
