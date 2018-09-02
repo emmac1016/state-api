@@ -86,15 +86,7 @@ func (fl *FixtureLoader) loadStateData() error {
 
 func (fl *FixtureLoader) loadStates(states []interface{}) error {
 	log.Print("Loading state data into db")
-
-	session := fl.dbh.Session.Copy()
-	defer session.Close()
-
-	collection := session.DB(fl.dbh.DB).C("states")
-	bulkInsert := collection.Bulk()
-	bulkInsert.Insert(states...)
-	bulkInsert.Unordered()
-	_, err := bulkInsert.Run()
+	_, err := fl.dbh.BulkInsert("states", states...)
 
 	return err
 }

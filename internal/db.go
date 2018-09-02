@@ -12,12 +12,19 @@ type DB struct {
 	Connection *mgo.Session
 }
 
+type Bulk interface {
+	Insert(docs ...interface{})
+	Run()
+	Unordered()
+}
+
 type Query interface {
 	All(interface{}) error
 	Select(interface{}) *mgo.Query
 }
 
 type Collection interface {
+	Bulk() *mgo.Bulk
 	EnsureIndex(mgo.Index) error
 	Find(interface{}) *mgo.Query
 }
@@ -60,8 +67,19 @@ func (dbh *DBHandler) Collection(name string) Collection {
 	return dbh.Session.DB(dbh.DB).C(name)
 }
 
-func (dbh *DBHandler) Find(collection string, query interface{}) Query {
-	return dbh.Collection(collection).Find(query)
+func (dbh *DBHandler) Find(collectionName string, query interface{}) Query {
+	return dbh.Collection(collectionName).Find(query)
+}
+
+func (dbh *DBHandler) BulkInsert(collectionName string, docs ...interface{}) (*mgo.BulkResult, error) {
+	session := dbh.Session.Copy()
+	defer session.Close()
+
+	collection := dbh.Collection(collectionName)
+	bulkInsert := collection.Bulk()
+	bulkInsert.Insert(docs...)
+	bulkInsert.Unordered()
+	return bulkInsert.Run()
 }
 
 // SetGeoSpatialIndex sets 2d geospatial index for a given collection,
