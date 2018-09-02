@@ -14,7 +14,7 @@ type DB struct {
 
 type Query interface {
 	All(interface{}) error
-	Select(interface{}) Query
+	Select(interface{}) *mgo.Query
 }
 
 type Collection interface {
@@ -37,6 +37,12 @@ type DBHandler struct {
 	Session Session
 }
 
+type DBH interface {
+	Collection(string) Collection
+	Find(collection string, query interface{}) Query
+	SetGeoSpatialIndex(string) error
+}
+
 func NewDBHandler(ci *ConnectionInfo) (*DBHandler, error) {
 	session, err := ci.Dial()
 	if err != nil {
@@ -52,6 +58,10 @@ func NewDBHandler(ci *ConnectionInfo) (*DBHandler, error) {
 
 func (dbh *DBHandler) Collection(name string) Collection {
 	return dbh.Session.DB(dbh.DB).C(name)
+}
+
+func (dbh *DBHandler) Find(collection string, query interface{}) Query {
+	return dbh.Collection(collection).Find(query)
 }
 
 // SetGeoSpatialIndex sets 2d geospatial index for a given collection,

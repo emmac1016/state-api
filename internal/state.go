@@ -45,11 +45,8 @@ func NewStateRepo() (*StateRepo, error) {
 // FindStateByCoordinates finds what state the given coordinates are in
 func (sr *StateRepo) FindStateByCoordinates(longitude float64, latitude float64) ([]State, error) {
 	var results []State
-	session := sr.dbh.Session.Copy()
-	defer session.Close()
 
-	collection := sr.dbh.Collection("states")
-	err := collection.Find(bson.M{
+	err := sr.dbh.Find("states", bson.M{
 		"location": bson.M{
 			"$geoIntersects": bson.M{
 				"$geometry": bson.M{
