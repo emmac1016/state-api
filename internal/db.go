@@ -10,7 +10,7 @@ import (
 type DBHandler struct {
 	DB      string
 	conn    string
-	Session *mgo.Session
+	session *mgo.Session
 }
 
 // Database defines the actions that a DBHandler can execute
@@ -45,13 +45,13 @@ func (dbh *DBHandler) Connect() error {
 		return err
 	}
 
-	dbh.Session = session
+	dbh.session = session
 
 	return nil
 }
 
 func (dbh *DBHandler) Collection(name string) *mgo.Collection {
-	return dbh.Session.DB(dbh.DB).C(name)
+	return dbh.session.DB(dbh.DB).C(name)
 }
 
 func (dbh *DBHandler) Find(collectionName string, query interface{}) *mgo.Query {
@@ -59,7 +59,7 @@ func (dbh *DBHandler) Find(collectionName string, query interface{}) *mgo.Query 
 }
 
 func (dbh *DBHandler) BulkInsert(collectionName string, docs ...interface{}) (*mgo.BulkResult, error) {
-	session := dbh.Session.Copy()
+	session := dbh.session.Copy()
 	defer session.Close()
 
 	collection := dbh.Collection(collectionName)
@@ -72,7 +72,7 @@ func (dbh *DBHandler) BulkInsert(collectionName string, docs ...interface{}) (*m
 // SetGeoSpatialIndex sets 2d geospatial index for a given collection,
 // assumes GeoJSON format with location as the key
 func (dbh *DBHandler) SetGeoSpatialIndex(collectionName string) error {
-	session := dbh.Session.Copy()
+	session := dbh.session.Copy()
 	defer session.Close()
 
 	collection := dbh.Collection(collectionName)

@@ -52,7 +52,7 @@ func (fl *FixtureLoader) LoadData() error {
 func (fl *FixtureLoader) dropData() error {
 	log.Print("Dropping ", fl.dbh.DB)
 
-	session := fl.dbh.Session.Copy()
+	session := fl.dbh.session.Copy()
 	defer session.Close()
 
 	db := session.DB(fl.dbh.DB)

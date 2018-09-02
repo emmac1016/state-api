@@ -70,3 +70,53 @@ func TestNewDBHandler(t *testing.T) {
 		})
 	}
 }
+
+func TestConnect(t *testing.T) {
+	tests := []struct {
+		name     string
+		conn     string
+		dialFunc func(string) (*mgo.Session, error)
+		err      error
+	}{
+		{
+			name: "Connect successfully gets db session",
+			conn: "mongodb://dbuser:dbpass@localhost:27017/mydb",
+			dialFunc: func(url string) (*mgo.Session, error) {
+				return &mgo.Session{}, nil
+			},
+			err: nil,
+		},
+		{
+			name: "DBHandler won't have a session if Connect fails to get db session",
+			conn: "mongodb://dbuser:dbpass@localhost:27017/mydb",
+			dialFunc: func(url string) (*mgo.Session, error) {
+				return nil, errors.New("Fail")
+			},
+			err: errors.New("Fail"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// set oldDialFunc to old dialFunc
+			oldDialFunc := dialFunc
+			// as we are exiting, revert sqlOpen back to oldSqlOpen at end of function
+			defer func() { dialFunc = oldDialFunc }()
+			dialFunc = tt.dialFunc
+
+			dbh := &DBHandler{
+				conn: tt.conn,
+			}
+			err := dbh.Connect()
+
+			if tt.err != nil {
+				assert.NotNil(t, err)
+				assert.Equal(t, err, tt.err)
+				assert.Nil(t, dbh.session)
+			} else {
+				assert.NotNil(t, dbh.session)
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
