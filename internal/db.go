@@ -6,72 +6,55 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-// DB holds database name and connection used to run queries
-type DB struct {
-	Name       string
-	Connection *mgo.Session
-}
-
-type Bulk interface {
-	Insert(docs ...interface{})
-	Run()
-	Unordered()
-}
-
-type Query interface {
-	All(interface{}) error
-	Select(interface{}) *mgo.Query
-}
-
-type Collection interface {
-	Bulk() *mgo.Bulk
-	EnsureIndex(mgo.Index) error
-	Find(interface{}) *mgo.Query
-}
-
-type Session interface {
-	Close()
-	Copy() *mgo.Session
-	DB(name string) *mgo.Database
-}
-
-type Database interface {
-	C(name string) *Collection
-}
-
+// DBHandler holds the info needed to interact with the db
 type DBHandler struct {
 	DB      string
-	Conn    string
-	Session Session
+	conn    string
+	Session *mgo.Session
 }
 
-type DBH interface {
+// Database defines the actions that a DBHandler can execute
+type Database interface {
 	BulkInsert(string, ...interface{}) (*mgo.BulkResult, error)
-	Collection(string) Collection
-	Find(collection string, query interface{}) Query
+	Collection(string) *mgo.Collection
+	Find(string, interface{}) *mgo.Query
 	SetGeoSpatialIndex(string) error
 }
 
-func NewDBHandler() *DBHandler {
-	return &DBHandler{}
+var dialFunc = mgo.Dial
+
+func NewDBHandler(ci *ConnectionInfo) (*DBHandler, error) {
+	conn := ci.createConnectionString()
+	dbh := &DBHandler{
+		DB:   ci.Database,
+		conn: conn,
+	}
+	err := dbh.Connect()
+	if err != nil {
+		log.Print("Failure to create DBHandler: ", err)
+		return nil, err
+	}
+
+	return dbh, nil
 }
 
-func (dbh *DBHandler) Connect(ch *ConnectionHandler) error {
-	err := ch.Dial()
+func (dbh *DBHandler) Connect() error {
+	session, err := dialFunc(dbh.conn)
 	if err != nil {
-		log.Print("Error in creating DBHandler: ", err)
+		log.Print("Error in creating db session: ", err)
 		return err
 	}
 
-	dbh.Session = ch.s
+	dbh.Session = session
+
 	return nil
 }
 
-func (dbh *DBHandler) Collection(name string) Collection {
+func (dbh *DBHandler) Collection(name string) *mgo.Collection {
 	return dbh.Session.DB(dbh.DB).C(name)
 }
 
-func (dbh *DBHandler) Find(collectionName string, query interface{}) Query {
+func (dbh *DBHandler) Find(collectionName string, query interface{}) *mgo.Query {
 	return dbh.Collection(collectionName).Find(query)
 }
 
