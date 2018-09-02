@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"fmt"
+	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,28 +10,52 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+type StatesResponse struct {
+	States []internal.State `json:"states"`
+}
+
+// GetState returns state where a given longitude and latitude reside in
 func GetState(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	var message string
 	if err := r.ParseForm(); err != nil {
-		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		log.Print("ParseForm() err: ", err)
+		fail(nil, w)
 		return
 	}
 
-	fmt.Fprintf(w, "Post from website! r.PostFrom = %v\n", r.PostForm)
-	longitude, err := strconv.ParseFloat(r.FormValue("longitude"), 64)
+	long := r.FormValue("longitude")
+	lat := r.FormValue("latitude")
+	if len(long) == 0 || len(lat) == 0 {
+		log.Print("latitude or longitude is missing")
+		message = `{message: "'longitude' and 'latitude' fields are required"}`
+		fail([]byte(message), w, http.StatusBadRequest)
+		return
+	}
+
+	fltLong, err := strconv.ParseFloat(long, 64)
 	if err != nil {
 		log.Print("invalid longitude value")
-		return //return 4xx bad request
+		message = `{message: "invalid longitude value"}`
+		fail([]byte(message), w, http.StatusBadRequest)
+		return
 	}
-	latitude, err := strconv.ParseFloat(r.FormValue("latitude"), 64)
+	fltLat, err := strconv.ParseFloat(lat, 64)
 	if err != nil {
 		log.Print("invalid latitude value")
-		return //return 4xx bad request
+		message = `{message: "invalid latitude value"}`
+		fail([]byte(message), w, http.StatusBadRequest)
+		return
 	}
 
-	fmt.Fprintf(w, "Longitude: %s, Latitude: %s\n", longitude, latitude)
-
 	sr, err := internal.NewStateRepo()
-	state, err := sr.FindStateByCoordinates(longitude, latitude)
+	states, err := sr.FindStateByCoordinates(fltLong, fltLat)
 
-	fmt.Println(state)
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	enc := json.NewEncoder(w)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(states); err != nil {
+		panic(err)
+	}
 }

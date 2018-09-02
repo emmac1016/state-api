@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"encoding/json"
 	"log"
 
 	"gopkg.in/mgo.v2/bson"
@@ -18,20 +19,21 @@ type StateRepo struct {
 
 // State defines the mongo document structure
 type State struct {
-	ID       bson.ObjectId `bson:"_id,omitempty" json:"_id"`
+	ID       bson.ObjectId `bson:"_id,omitempty" json:"omitempty"`
 	Name     string        `bson:"name" json:"state"`
-	Location GeoJSON       `bson:"location" json:"border"`
+	Location GeoJSON       `bson:"location" json:"omitempty"`
 }
 
 //GeoJSON holds the longitude & latitude data to query from
 type GeoJSON struct {
-	Type        string        `bson:"type" json:"type"`
-	Coordinates [][][]float64 `bson:"coordinates" json:"coordinates"`
+	Type        string        `bson:"type" json:"omitempty"`
+	Coordinates [][][]float64 `bson:"coordinates" json:"omitempty"`
 }
 
 // NewStateRepo returns an instance of StateRepo that will be used to execute queries
 func NewStateRepo() (*StateRepo, error) {
-	db, err := NewAppDB()
+	connInfo := GetDefaultConnection()
+	db, err := NewDB(connInfo)
 	if err != nil {
 		log.Print("Failure to get StateRepo instance: ", err)
 		return nil, err
@@ -56,7 +58,16 @@ func (sr *StateRepo) FindStateByCoordinates(longitude float64, latitude float64)
 				},
 			},
 		},
-	}).All(&results)
+	}).Select(bson.M{"name": 1, "_id": 0}).All(&results)
+
+	if len(results) == 0 {
+		return make([]State, 0), err
+	}
 
 	return results, err
+}
+
+// MarshalJSON returns only the name of the state from the struct
+func (s *State) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.Name)
 }

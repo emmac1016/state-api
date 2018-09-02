@@ -18,17 +18,14 @@ type ConnectionInfo struct {
 
 // NewConnection connects and returns session given connection info
 func NewConnection(ci *ConnectionInfo) (*mgo.Session, error) {
-	if ci == nil {
-		ci = getDefaultConnection()
-	}
-
 	conn := ci.createConnectionString()
 	return connect(conn)
 }
 
-func getDefaultConnection() *ConnectionInfo {
+// GetDefaultConnection returns connection info for the App based on environment
+func GetDefaultConnection() *ConnectionInfo {
 	return &ConnectionInfo{
-		Host:     os.Getenv("MONGO_HOST"),
+		Host:     os.Getenv("APP_MONGO_HOST"),
 		Database: os.Getenv("MONGO_DB"),
 		Username: os.Getenv("MONGO_USER"),
 		Password: os.Getenv("MONGO_PW"),

@@ -12,11 +12,6 @@ type DB struct {
 	Connection *mgo.Session
 }
 
-// NewAppDB returns DB struct with default connection & database name
-func NewAppDB() (*DB, error) {
-	return NewDB(nil)
-}
-
 // NewDB returns DB struct with connection and database name
 func NewDB(ci *ConnectionInfo) (*DB, error) {
 	conn, err := NewConnection(ci)
