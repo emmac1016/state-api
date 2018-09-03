@@ -5,6 +5,8 @@ This project requires [Docker](https://docs.docker.com/v17.12/docker-for-mac/ins
 
 ```
 $ cp .env.example .env
+$ go get -u github.com/golang/dep/cmd/dep
+$ dep ensure --vendor-only
 $ make dev
 ```
 
