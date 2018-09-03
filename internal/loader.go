@@ -18,7 +18,11 @@ type JSONData struct {
 
 // FixtureLoader is a wrapper around DB struct to expand functionality
 type FixtureLoader struct {
-	DB *DB
+	dbh *DBHandler
+}
+
+func NewFixtureLoader(dbh *DBHandler) *FixtureLoader {
+	return &FixtureLoader{dbh: dbh}
 }
 
 // LoadData drops and loads fixture data
@@ -36,7 +40,7 @@ func (fl *FixtureLoader) LoadData() error {
 	}
 
 	log.Print("Enforcing geospatial index on states collection")
-	err = fl.DB.SetGeoSpatialIndex("states")
+	err = fl.dbh.SetGeoSpatialIndex("states")
 	if err != nil {
 		log.Print("Failure to set geo spatial index: ", err)
 		return err
@@ -46,12 +50,12 @@ func (fl *FixtureLoader) LoadData() error {
 }
 
 func (fl *FixtureLoader) dropData() error {
-	log.Print("Dropping ", fl.DB.Name)
+	log.Print("Dropping ", fl.dbh.DB)
 
-	session := fl.DB.Connection.Copy()
+	session := fl.dbh.session.Copy()
 	defer session.Close()
 
-	db := session.DB(fl.DB.Name)
+	db := session.DB(fl.dbh.DB)
 	err := db.DropDatabase()
 	if err != nil {
 		log.Print("Error droping database: ", err)
@@ -70,8 +74,7 @@ func (fl *FixtureLoader) loadStateData() error {
 		log.Print("Error in parsing file: ", err)
 		return err
 	}
-	log.Print("-------------------------------------------------")
-	log.Print(states)
+
 	err = fl.loadStates(states)
 	if err != nil {
 		log.Print("Error in inserting into db: ", err)
@@ -83,15 +86,7 @@ func (fl *FixtureLoader) loadStateData() error {
 
 func (fl *FixtureLoader) loadStates(states []interface{}) error {
 	log.Print("Loading state data into db")
-
-	session := fl.DB.Connection.Copy()
-	defer session.Close()
-
-	collection := session.DB(fl.DB.Name).C("states")
-	bulkInsert := collection.Bulk()
-	bulkInsert.Insert(states...)
-	bulkInsert.Unordered()
-	_, err := bulkInsert.Run()
+	_, err := fl.dbh.BulkInsert("states", states...)
 
 	return err
 }

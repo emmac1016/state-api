@@ -17,3 +17,6 @@ db_build:
 
 load_fixtures:
 	./fixtures --host ${MONGO_HOST} --db ${MONGO_DB} --user ${MONGO_USER} --pass ${MONGO_PW}
+
+test:
+	@docker exec -it state-api go test ./...
