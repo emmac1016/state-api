@@ -1,9 +1,7 @@
 # Vistar Media State API
 
 ## Development
-
-### Local
-This project requires [Docker](https://docs.docker.com/v17.12/docker-for-mac/install/)
+This project requires [Docker](https://docs.docker.com/v17.12/docker-for-mac/install/).
 
 ```
 $ cp .env.example .env
