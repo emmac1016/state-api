@@ -71,7 +71,6 @@ func TestFindStateByCoordinates(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sr, _ := NewStateRepo()
-
 			results, err := sr.FindStateByCoordinates(tt.args.longitude, tt.args.latitude)
 
 			assert.Equal(t, results, tt.exp.results)
