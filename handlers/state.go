@@ -56,6 +56,9 @@ func GetState(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
 	if err := enc.Encode(states); err != nil {
-		panic(err)
+		log.Print("failed to encode json")
+		message = `{message: "failure to render response"}`
+		fail([]byte(message), w, http.StatusBadRequest)
+		return
 	}
 }

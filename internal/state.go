@@ -14,7 +14,7 @@ type AbstractStateRepo interface {
 
 // StateRepo is a wrapper around DB struct to expand functionality
 type StateRepo struct {
-	dbh *DBHandler
+	dbh Database
 }
 
 // State defines the mongo document structure

@@ -10,7 +10,22 @@ import (
 type DBHandler struct {
 	DB      string
 	conn    string
-	session *mgo.Session
+	session MgoSession
+	query   MgoQuery
+}
+
+type MgoSession interface {
+	Copy() *mgo.Session
+	DB(string) *mgo.Database
+}
+
+type MgoDatabase interface {
+	C(string) *mgo.Collection
+}
+
+type MgoQuery interface {
+	Select(interface{}) *mgo.Query
+	All(interface{}) error
 }
 
 // Database defines the actions that a DBHandler can execute
@@ -23,6 +38,7 @@ type Database interface {
 
 var dialFunc = mgo.Dial
 
+// NewDBHandler wraps connection handling
 func NewDBHandler(ci *ConnectionInfo) (*DBHandler, error) {
 	conn := ci.createConnectionString()
 	dbh := &DBHandler{
@@ -38,6 +54,7 @@ func NewDBHandler(ci *ConnectionInfo) (*DBHandler, error) {
 	return dbh, nil
 }
 
+// Connect wraps mgo.Dial function
 func (dbh *DBHandler) Connect() error {
 	session, err := dialFunc(dbh.conn)
 	if err != nil {
@@ -50,14 +67,17 @@ func (dbh *DBHandler) Connect() error {
 	return nil
 }
 
+// Collection is a wrapper around mgo's way of accessing the collection
 func (dbh *DBHandler) Collection(name string) *mgo.Collection {
 	return dbh.session.DB(dbh.DB).C(name)
 }
 
+// Find is a wrapper around mgo's Find function
 func (dbh *DBHandler) Find(collectionName string, query interface{}) *mgo.Query {
 	return dbh.Collection(collectionName).Find(query)
 }
 
+// BulkInsert is a wrapper around mgo's BulkInsert struct and behavior
 func (dbh *DBHandler) BulkInsert(collectionName string, docs ...interface{}) (*mgo.BulkResult, error) {
 	session := dbh.session.Copy()
 	defer session.Close()

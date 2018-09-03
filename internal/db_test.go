@@ -60,6 +60,7 @@ func TestNewDBHandler(t *testing.T) {
 			dbh, err := NewDBHandler(&tt.conn)
 
 			if tt.err != nil {
+				assert.Nil(t, dbh)
 				assert.NotNil(t, err)
 				assert.Equal(t, err, tt.err)
 			} else {
@@ -120,3 +121,50 @@ func TestConnect(t *testing.T) {
 		})
 	}
 }
+
+// func TestCollection(t *testing.T) {
+// 	type ExpectedValues struct {
+// 		db           string
+// 		collName     string
+// 		collFullName string
+// 	}
+// 	tests := []struct {
+// 		name     string
+// 		conn     string
+// 		exp      ExpectedValues
+// 		dialFunc func(string) (*mgo.Session, error)
+// 		err      error
+// 	}{
+// 		{
+// 			name: "Collection returns valid *mgo.Collection",
+// 			exp: ExpectedValues{
+// 				db:       "geodata",
+// 				collName: "states",
+// 			},
+// 			dialFunc: func(url string) (*mgo.Session, error) {
+// 				return &mgo.Session{}, nil
+// 			},
+// 			err: nil,
+// 		},
+// 	}
+
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			database := &mocks.MgoDatabase{}
+// 			database.On("C", tt.exp.collName).Return(&mgo.Collection{})
+// 			session := &mocks.MgoSession{}
+// 			session.On("DB", tt.exp.db).Return(database)
+// 			session.On("Copy").Return(session)
+
+// 			dbh := &DBHandler{
+// 				DB:      tt.exp.db,
+// 				session: session,
+// 			}
+
+// 			collection := dbh.Collection(tt.exp.collName)
+// 			assert.NotNil(t, collection)
+// 			database.AssertExpectations(t)
+// 			session.AssertExpectations(t)
+// 		})
+// 	}
+// }
