@@ -10,22 +10,7 @@ import (
 type DBHandler struct {
 	DB      string
 	conn    string
-	session MgoSession
-	query   MgoQuery
-}
-
-type MgoSession interface {
-	Copy() *mgo.Session
-	DB(string) *mgo.Database
-}
-
-type MgoDatabase interface {
-	C(string) *mgo.Collection
-}
-
-type MgoQuery interface {
-	Select(interface{}) *mgo.Query
-	All(interface{}) error
+	session *mgo.Session
 }
 
 // Database defines the actions that a DBHandler can execute
