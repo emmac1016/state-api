@@ -16,7 +16,7 @@ type ConnectionInfo struct {
 // GetDefaultConnection returns connection info for the App based on environment
 func GetDefaultConnection() *ConnectionInfo {
 	return &ConnectionInfo{
-		Host:     os.Getenv("APP_MONGO_HOST"),
+		Host:     os.Getenv("MONGO_HOST"),
 		Database: os.Getenv("MONGO_DB"),
 		Username: os.Getenv("MONGO_USER"),
 		Password: os.Getenv("MONGO_PW"),
