@@ -6,8 +6,8 @@ RUN go get -u github.com/golang/dep/cmd/dep
 ADD . /go/src/github.com/emmac1016/state-api
 WORKDIR /go/src/github.com/emmac1016/state-api
 
-#RUN dep ensure -v
-#RUN go install -v
+RUN dep ensure -v
+RUN go install -v
 
 CMD ["./main"]
 EXPOSE 8080
