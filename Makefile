@@ -9,7 +9,8 @@ dev:
 ## serve: Start in development mode. Auto-starts on code changes
 serve:
 	@echo "Building API"
-	@docker-compose up --build -d state-api
+	@docker-compose build --no-cache state-api
+	@docker-compose up -d state-api
 
 db_build:
 	@echo "Setting up Dev DB"
